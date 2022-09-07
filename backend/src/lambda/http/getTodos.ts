@@ -1,14 +1,16 @@
 import 'source-map-support/register'
 
-import {APIGatewayProxyEvent, APIGatewayProxyResult, APIGatewayProxyHandler} from 'aws-lambda';
-import {syncTodos} from "../../helpers/todos";
+import { APIGatewayProxyEvent, APIGatewayProxyHandler, APIGatewayProxyResult} from 'aws-lambda'
+//import * as middy from 'middy'
+//import { cors } from 'middy/middlewares'
+
+import { get_all_todo } from '../../helpers/todos'
+import { getUserId } from '../utils';
 
 export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
     // TODO: Get all TODO items for a current user
-    const auth = event.headers.Authorization;
-    const auth_body = auth.split(' ');
-    const token = auth_body[1];
-    const items = await syncTodos(token);
+    // Write your code here
+    const items = await get_all_todo(getUserId);
 	console.log("Events running on API's ", event);
     return {
         statusCode: 200,
@@ -20,4 +22,10 @@ export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEven
             "items": items,
         }),
     }
-};
+  }
+
+// handler.use(
+  // cors({
+    // credentials: true
+  // })
+// )

@@ -85,7 +85,7 @@ export class Todos extends React.PureComponent<TodosProps, TodosState> {
         })
       })
     } catch {
-      alert('Todo update failed')
+      alert('Todo deletion failed')
     }
   }
 
@@ -97,7 +97,7 @@ export class Todos extends React.PureComponent<TodosProps, TodosState> {
         loadingTodos: false
       })
     } catch (e) {
-      alert(`Failed to fetch todos: ${e.message}`)
+      alert(`Failed to fetch todos: ${(e as Error).message}`)
     }
   }
 

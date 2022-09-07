@@ -1,56 +1,57 @@
-import {TodoItem} from "../models/TodoItem";
-import {parseUserId} from "../auth/utils";
-import {CreateTodoRequest} from "../requests/CreateTodoRequest";
-import {UpdateTodoRequest} from "../requests/UpdateTodoRequest";
-import {TodoUpdate} from "../models/TodoUpdate";
+//import { TodosAccess } from './todosAcess'
+//import { createDynamoDBClient } from './attachmentUtils';
+import { TodoItem } from '../models/TodoItem'
+import { CreateTodoRequest } from '../requests/CreateTodoRequest'
+import { UpdateTodoRequest } from '../requests/UpdateTodoRequest'
+//import { createLogger } from '../utils/logger'
+import * as uuid from 'uuid'
+//import * as createError from 'http-errors'
 
-import {syncTodos_host} from "./todosAccess";
-import {newTodos_host} from "./todosAccess";
-import {reloadTodos_host} from "./todosAccess";
-import {rmTodos_host} from "./todosAccess";
-import {simUploadLink_host} from "./todosAccess";
+// TODO: Implement businessLogic
+import { TodoUpdate } from '../models/TodoUpdate';
+import { get_todo_items } from './todosAcess'
+import { create_todo_items } from './todosAcess'
+import { update_todo_items } from './todosAcess'
+import { delete_todo_items } from './todosAcess'
+import { get_upload_url } from './todosAcess'
+
+const look_get_items = new get_todo_items();
+const look_create_items = new create_todo_items();
+const look_update_items = new update_todo_items();
+const look_delete_items = new delete_todo_items();
+const look_get_url = new get_upload_url();
 
 
-const uniqueIDV4 = require('uuid/v4');
-const enableSyncTodos = new syncTodos_host();
-const enableNewTodos = new newTodos_host();
-const enableReloadTodos = new reloadTodos_host();
-const enableRmTodos = new rmTodos_host();
-const enableSimpleUploadLink = new simUploadLink_host();
-
-
-export function simUploadLink(content_id): Promise<string> {
-    return enableSimpleUploadLink.simUploadLink(content_id);
+export async function get_all_todo(token): 
+	Promise<TodoItem[]> {
+    return look_get_items.get_all_todo(token);
 }
 
-export function rmTodos(content_id, token): Promise<string> {
-    const parseID = parseUserId(token);
-    return enableRmTodos.rmTodos(content_id, parseID);
+export function update_all_todo(
+	updateTodoRequest: UpdateTodoRequest,
+	content_id: string, token: string
+	): Promise<TodoUpdate> {
+    return look_update_items.update_all_todo(updateTodoRequest, content_id, token);
 }
 
-export function newTodos(request_event: CreateTodoRequest, token): Promise<TodoItem> {
-    const parseID = parseUserId(token);
-    const content_id =  uniqueIDV4();
-    const dataBaseName = process.env.S3_BUCKET_NAME;
-    
-    return enableNewTodos.newTodos({
-        userId: parseID,
-        todoId: uniqueIDV4(),
-        attachmentUrl:  `https://${dataBaseName}.s3.amazonaws.com/${content_id}`, 
-        createdAt: new Date().getTime().toString(),
-        done: false,
-        ...request_event,
-    });
+export async function create_new_todo(
+  createTodoRequest: CreateTodoRequest,
+  token: string): Promise<TodoItem> {
+  const databaseBucket = process.env.S3_BUCKET_NAME
+  return await look_create_items.create_new_todo({
+    todoId: uuid,
+    userId: token,
+    attachmentUrl:  `https://${databaseBucket}.s3.amazonaws.com/${uuid}`, 
+    createdAt: new Date().toISOString(),
+	done: false,
+	...createTodoRequest,
+  })
 }
 
-export function reloadTodos(update_event : UpdateTodoRequest, content_id, token): Promise<TodoUpdate> {
-    const parseID = parseUserId(token);
-    return enableReloadTodos.reloadTodos(update_event, content_id, parseID);
+export function delete_this_todo_item(content_id: string, token): Promise<string> {
+    return look_delete_items.delete_this_todo_item(content_id, token);
 }
 
-
-
-export async function syncTodos(token): Promise<TodoItem[]> {
-    const parseID = parseUserId(token);
-    return enableSyncTodos.syncTodos(parseID);
+export function get_required_link(content_id: string): Promise<string> {
+    return look_get_url.get_required_link(content_id);
 }

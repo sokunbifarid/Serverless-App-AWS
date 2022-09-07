@@ -1,18 +1,25 @@
 import 'source-map-support/register'
-import {APIGatewayProxyEvent, APIGatewayProxyHandler, APIGatewayProxyResult} from 'aws-lambda'
-import {UpdateTodoRequest} from '../../requests/UpdateTodoRequest'
-import {reloadTodos} from "../../helpers/todos";
 
-export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
-    // TODO: Update a TODO item with the provided id using values in the "updatedTodo" object
-    const auth = event.headers.Authorization;
-    const auth_body = auth.split(' ');
-    const token = auth_body[1];
-    const itemID = event.pathParameters.todoId;
-    const updatedTodo: UpdateTodoRequest = JSON.parse(event.body);
-    const items = await reloadTodos(updatedTodo, itemID, token);
-	console.log("Events running on API's", event);
-    return {
+import { APIGatewayProxyEvent, APIGatewayProxyResult} from 'aws-lambda'
+import * as middy from 'middy'
+import { parseUserId } from "../../auth/utils";
+//import { cors, httpErrorHandler } from 'middy/middlewares'
+
+import { update_all_todo } from '../../helpers/todos'
+import { UpdateTodoRequest } from '../../requests/UpdateTodoRequest'
+
+export const handler = middy(
+  async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
+    const todoId = event.pathParameters.todoId
+    // TODO: Implement creating a new TODO item
+	const updatedTodo: UpdateTodoRequest = JSON.parse(event.body);
+	const authorization = event.headers.Authorization
+	const split = authorization.split(' ')
+	const jwtToken = split[1]
+	const token = parseUserId(jwtToken)
+	const items = await update_all_todo(updatedTodo, todoId, token);
+	console.log("Events are runnin on API's", event);
+	return {
         statusCode: 200,
         headers: {
             'Access-Control-Allow-Origin': '*',
@@ -22,4 +29,14 @@ export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEven
             "item": items
         }),
     }
-};
+  }
+)
+
+
+// handler
+  // .use(httpErrorHandler())
+  // .use(
+    // cors({
+      // credentials: true
+    // })
+  // )
